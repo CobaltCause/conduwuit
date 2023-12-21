@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - wat
 
 env:
   # Required to make some things output color
