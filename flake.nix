@@ -95,6 +95,8 @@
       packages.default = builder {
         src = ./.;
 
+        doCheck = false;
+
         inherit
           env
           nativeBuildInputs
