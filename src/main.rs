@@ -37,7 +37,7 @@ use ruma::api::{
     },
     IncomingRequest,
 };
-use tokio::{net::UnixListener, signal, sync::oneshot};
+use tokio::{net::UnixListener, signal, sync::oneshot, task::JoinSet};
 use tower::ServiceBuilder;
 use tower_http::{
     cors::{self, CorsLayer},
@@ -76,6 +76,7 @@ async fn main() {
                 ))
                 .nested(),
             )
+            .merge(Env::raw().only(&["SERVER_NAME"]))
             .merge(Env::prefixed("CONDUIT_").global());
 
     let config = match raw_config.extract::<Config>() {
@@ -166,7 +167,12 @@ async fn main() {
 
 async fn run_server() -> io::Result<()> {
     let config = &services().globals.config;
-    let addr = SocketAddr::from((config.address, config.port));
+    let addrs = config
+        .port
+        .iter()
+        .copied()
+        .map(|x| SocketAddr::from((config.address, x)))
+        .collect::<Vec<_>>();
 
     let x_requested_with = HeaderName::from_static("x-requested-with");
 
@@ -257,20 +263,23 @@ async fn run_server() -> io::Result<()> {
         }
     } else {
         match &config.tls {
-            Some(tls) => {
-                let conf = RustlsConfig::from_pem_file(&tls.certs, &tls.key).await?;
-                let server = bind_rustls(addr, conf).handle(handle).serve(app);
+            Some(_) => {
+                // let conf = RustlsConfig::from_pem_file(&tls.certs, &tls.key).await?;
+                // let server = bind_rustls(addr, conf).handle(handle).serve(app);
 
-                #[cfg(feature = "systemd")]
-                let _ = sd_notify::notify(true, &[sd_notify::NotifyState::Ready]);
-                server.await?
+                // #[cfg(feature = "systemd")]
+                // let _ = sd_notify::notify(true, &[sd_notify::NotifyState::Ready]);
+                // server.await?
+                todo!()
             }
             None => {
-                let server = bind(addr).handle(handle).serve(app);
+                let mut join_set = JoinSet::new();
+                for addr in addrs {
+                    join_set.spawn(bind(addr).handle(handle.clone()).serve(app.clone()));
+                }
 
                 #[cfg(feature = "systemd")]
                 let _ = sd_notify::notify(true, &[sd_notify::NotifyState::Ready]);
-                server.await?
             }
         }
     }

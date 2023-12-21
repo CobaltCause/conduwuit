@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+pushd "$(git rev-parse --show-toplevel)"
+
+nix build .#oci-image
+docker load < result
+
+pushd "$COMPLEMENT_SRC"
+
+COMPLEMENT_BASE_IMAGE=conduwuit:latest go test -v ./tests/
+
+popd
+
+popd

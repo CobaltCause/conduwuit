@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "complement": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1701108461,
+        "narHash": "sha256-b5H0NE3r48u1l3qBJCeKnTI2tpbETx4eEPYtzaoAFG8=",
+        "owner": "matrix-org",
+        "repo": "complement",
+        "rev": "ad263aa5d0dfbd823d99e486642d71f402a07ffa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "matrix-org",
+        "ref": "main",
+        "repo": "complement",
+        "type": "github"
+      }
+    },
     "crane": {
       "inputs": {
         "nixpkgs": [
@@ -77,6 +94,7 @@
     },
     "root": {
       "inputs": {
+        "complement": "complement",
         "crane": "crane",
         "fenix": "fenix",
         "flake-utils": "flake-utils",

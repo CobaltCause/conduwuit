@@ -19,7 +19,7 @@ pub struct Config {
     #[serde(default = "default_address")]
     pub address: IpAddr,
     #[serde(default = "default_port")]
-    pub port: u16,
+    pub port: Vec<u16>,
     pub tls: Option<TlsConfig>,
     pub unix_socket_path: Option<PathBuf>,
     #[serde(default = "default_unix_socket_perms")]
@@ -307,8 +307,8 @@ fn default_address() -> IpAddr {
     Ipv4Addr::LOCALHOST.into()
 }
 
-fn default_port() -> u16 {
-    8000
+fn default_port() -> Vec<u16> {
+    vec![8000]
 }
 
 fn default_unix_socket_perms() -> u32 {

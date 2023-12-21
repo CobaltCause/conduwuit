@@ -12,6 +12,11 @@
       url = "github:ipetkov/crane";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    complement = {
+      url = "github:matrix-org/complement?ref=main";
+      flake = false;
+    };
   };
 
   outputs =
@@ -21,6 +26,8 @@
 
     , fenix
     , crane
+
+    , complement
     }: flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs {
@@ -101,6 +108,58 @@
           env
           nativeBuildInputs
           stdenv;
+
+        meta.mainProgram = "conduit";
+      };
+
+      packages.oci-image =
+      let
+        package = self.outputs.packages.${system}.default;
+        config = pkgs.writeText "conduit.toml" ''
+          [global]
+          database_path = "/database"
+          database_backend = "rocksdb"
+          port = [8008, 8448]
+          address = "0.0.0.0"
+          allow_federation = true
+          allow_registration = true
+        '';
+      in
+      pkgs.dockerTools.buildImage {
+        name = package.pname;
+        tag = "latest";
+
+        copyToRoot = pkgs.buildEnv {
+          name = "root";
+
+          paths = [
+            package
+          ];
+
+          pathsToLink = [
+            "/bin"
+          ];
+        };
+
+        config = {
+          Env = [
+            "CONDUIT_CONFIG=${config}"
+          ];
+
+          Entrypoint = [
+            "${pkgs.lib.getExe' pkgs.tini "tini"}"
+            "--"
+          ];
+
+          Cmd = [
+            "${pkgs.lib.getExe package}"
+          ];
+
+          ExposedPorts = {
+            "8008" = {};
+            "8448" = {};
+          };
+        };
       };
 
       devShells.default = (pkgs.mkShell.override { inherit stdenv; }) {
@@ -109,6 +168,8 @@
           # sources, and it can read this environment variable to do so. The
           # `rust-src` component is required in order for this to work.
           RUST_SRC_PATH = "${devToolchain}/lib/rustlib/src/rust/library";
+
+          COMPLEMENT_SRC = complement.outPath;
         };
 
         # Development tools
@@ -116,6 +177,10 @@
           devToolchain
         ] ++ (with pkgs; [
           engage
+
+          # Needed for Complement
+          go
+          olm
         ]);
       };
     });
