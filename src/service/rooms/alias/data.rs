@@ -9,6 +9,9 @@ pub(crate) trait Data: Send + Sync {
 	/// Forgets about an alias. Returns an error if the alias did not exist.
 	fn remove_alias(&self, alias: &RoomAliasId) -> Result<()>;
 
+	/// Remove all aliases associated with the given room ID
+	fn remove_all_aliases(&self, room_id: &RoomId);
+
 	/// Looks up the roomid for the given alias.
 	fn resolve_local_alias(&self, alias: &RoomAliasId) -> Result<Option<OwnedRoomId>>;
 

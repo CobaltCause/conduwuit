@@ -52,6 +52,7 @@ use utils::{
 mod api;
 mod config;
 mod database;
+mod nonsense;
 mod routes;
 mod service;
 mod utils;
@@ -85,13 +86,19 @@ struct Server {
 	_sentry_guard: Option<sentry::ClientInitGuard>,
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let args = clap::parse();
-	let conduwuit: Server = init(args)?;
 
-	conduwuit
-		.runtime
-		.block_on(async { async_main(&conduwuit).await })
+	if args.subcmd.is_some() {
+		nonsense::main(args)
+	} else {
+		let conduwuit: Server = init(args)?;
+
+		conduwuit
+			.runtime
+			.block_on(async { async_main(&conduwuit).await })
+			.map_err(Into::into)
+	}
 }
 
 async fn async_main(server: &Server) -> Result<(), Error> {

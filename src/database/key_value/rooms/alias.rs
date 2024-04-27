@@ -1,4 +1,5 @@
 use ruma::{api::client::error::ErrorKind, OwnedRoomAliasId, OwnedRoomId, RoomAliasId, RoomId};
+use tracing::info;
 
 use crate::{database::KeyValueDatabase, service, services, utils, Error, Result};
 
@@ -26,6 +27,24 @@ impl service::rooms::alias::Data for KeyValueDatabase {
 			return Err(Error::BadRequest(ErrorKind::NotFound, "Alias does not exist."));
 		}
 		Ok(())
+	}
+
+	#[tracing::instrument(skip(self))]
+	fn remove_all_aliases(&self, room_id: &RoomId) {
+		let mut prefix = room_id.as_bytes().to_vec();
+		prefix.push(0xFF);
+
+		let (keys, values): (Vec<_>, Vec<_>) = self.aliasid_alias.scan_prefix(prefix).unzip();
+
+		info!(?values, count = values.len(), "deleting all aliases");
+
+		self.alias_roomid
+			.remove_batch(&mut values.into_iter())
+			.expect("should be able to remove from alias_roomid");
+
+		self.aliasid_alias
+			.remove_batch(&mut keys.into_iter())
+			.expect("should be able to remove from aliasid_alias");
 	}
 
 	fn resolve_local_alias(&self, alias: &RoomAliasId) -> Result<Option<OwnedRoomId>> {

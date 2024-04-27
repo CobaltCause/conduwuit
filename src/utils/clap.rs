@@ -2,6 +2,8 @@
 
 use std::path::PathBuf;
 
+use ruma::OwnedRoomId;
+
 /// Returns the current version of the crate with extra info if supplied
 ///
 /// Set the environment variable `CONDUIT_VERSION_EXTRA` to any UTF-8 string to
@@ -24,6 +26,17 @@ pub(crate) struct Args {
 	#[arg(short, long)]
 	/// Optional argument to the path of a conduwuit config TOML file
 	pub(crate) config: Option<PathBuf>,
+
+	#[clap(subcommand)]
+	pub(crate) subcmd: Option<Subcmd>,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub(crate) enum Subcmd {
+	/// Database operations
+	YeetRoom {
+		room_id: OwnedRoomId,
+	},
 }
 
 /// Parse commandline arguments into structured data
