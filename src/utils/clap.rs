@@ -2,8 +2,6 @@
 
 use std::path::PathBuf;
 
-use clap::Parser;
-
 /// Returns the current version of the crate with extra info if supplied
 ///
 /// Set the environment variable `CONDUIT_VERSION_EXTRA` to any UTF-8 string to
@@ -20,7 +18,7 @@ fn version() -> String {
 }
 
 /// Commandline arguments
-#[derive(Parser, Debug)]
+#[derive(clap::Parser, Debug)]
 #[clap(version = version(), about, long_about = None)]
 pub(crate) struct Args {
 	#[arg(short, long)]
@@ -30,4 +28,4 @@ pub(crate) struct Args {
 
 /// Parse commandline arguments into structured data
 #[must_use]
-pub(crate) fn parse() -> Args { Args::parse() }
+pub(crate) fn parse() -> Args { <Args as clap::Parser>::parse() }
